@@ -4,7 +4,7 @@ from django.contrib.admin.views.main import ChangeList
 from django.db.models.query import ValuesQuerySet
 from django.db.models import Sum, Avg, Count, Max, Min
 from django.contrib.admin.validation import ModelAdminValidator
-from django.http import Http404, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
 from daterange_filter.filter import DateRangeFilter
@@ -270,7 +270,7 @@ class AdminExceptionFieldsFilterMixin(admin.ModelAdmin):
         return ret
 
 
-class ChartReportAdmin(admin.ModelAdmin):
+class ReportAdmin(admin.ModelAdmin):
     # change_list_template = "admin/relatorios/change_list.html"
 
     report_annotates = ()
@@ -279,7 +279,7 @@ class ChartReportAdmin(admin.ModelAdmin):
     validator_class = ModelAdminValidator2
 
     # def __new__(cls, *args, **kwargs):
-        # return super(ChartReportAdmin, cls).__new__(cls, *args, **kwargs)
+        # return super(ReportAdmin, cls).__new__(cls, *args, **kwargs)
 
     class Media:
         css = {
@@ -347,11 +347,11 @@ class ChartReportAdmin(admin.ModelAdmin):
         # print "########################## self.map_display_fields_and_aggregate #########################"
         # print self.map_display_fields_and_aggregate
 
-        # ChartReportAdmin.addMethod(function_builder("total_value__sum"))
+        # ReportAdmin.addMethod(function_builder("total_value__sum"))
 
         self.list_max_show_all = sys.maxsize
 
-        super(ChartReportAdmin, self).__init__(model, admin_site)
+        super(ReportAdmin, self).__init__(model, admin_site)
         self.list_display_links = (None, )
 
     # TODO: refazer esse metodo, nao esta legal

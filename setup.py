@@ -1,9 +1,8 @@
 from distutils.core import setup
 from setuptools import find_packages
 
+VERSION = __import__("admin_report").__version__
 
-VERSION = __import__("django-admin-report").__version__
-print VERSION
 CLASSIFIERS = [
     'Framework :: Django',
     'Intended Audience :: Developers',
