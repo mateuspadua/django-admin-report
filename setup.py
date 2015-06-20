@@ -20,7 +20,7 @@ install_requires = [
 
 setup(
     name="django-admin-report",
-    packages=["django-admin-report"],  # find_packages(exclude=["tests"]),
+    packages=find_packages(exclude=["tests"]),
     description="Django application and library for create reports using all power of the ORM Django",
     version=VERSION,
     author="Mateus Vanzo de Padua",
