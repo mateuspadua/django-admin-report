@@ -31,6 +31,14 @@ How use:
 
 1. First: look this model.py. This example is inside this project in the "example" folder
 		
+		class Product(models.Model):
+			name = models.CharField("Product name", max_length=255)
+			value = models.DecimalField(max_digits=11, decimal_places=2)
+
+			def __unicode__(self):
+				return self.name
+
+
 		class Order(models.Model):
 			data = models.DateField(auto_now_add=True, verbose_name='Data do Cadastro')
 			payment_type = models.PositiveSmallIntegerField(default=None, choices=PAYMENT_TYPE, blank=True, null=True)
