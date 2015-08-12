@@ -4,7 +4,7 @@ Create reports using the full potential of django admin
 Django-Admin-Report
 ==============
 
-This is a [Django](https://www.djangoproject.com/)
+This is a [Django](https://www.djangoproject.com/) app project
 
 The app includes admin_report Mixin.
 
