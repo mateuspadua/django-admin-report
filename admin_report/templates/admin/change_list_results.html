@@ -1,4 +1,3 @@
-{% comment %}
 {% load i18n admin_static %}{% load cycle from future %}
 {% if result_hidden_fields %}
 <div class="hiddenfields">{# DIV for HTML validation #}
@@ -48,8 +47,8 @@
 </table>
 </div>
 {% endif %}
-{% endcomment %}
 
+{% comment %}
 {% load i18n admin_static suit_list %}
 {% if result_hidden_fields %}
     <div class="hiddenfields">{# DIV for HTML validation #}
@@ -107,3 +106,4 @@
         </table>
     </div>
 {% endif %}
+{% endcomment %}
