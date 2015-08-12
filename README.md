@@ -30,6 +30,7 @@ Documentation
 How use:
 
 1. First: look this model.py. This example is inside this project in the "example" folder
+		
 		class Order(models.Model):
 			data = models.DateField(auto_now_add=True, verbose_name='Data do Cadastro')
 			payment_type = models.PositiveSmallIntegerField(default=None, choices=PAYMENT_TYPE, blank=True, null=True)
@@ -58,12 +59,14 @@ How use:
 
 
 2. Second: in your app, add in your model.py one proxy model to model that you desired create report, like this:
+		
 		class ProductProxy(Product):
 			class Meta:
 				verbose_name, verbose_name_plural = u"Report Order Item", u"Report Order Items"
 				proxy = True 	
 
 3 Third: in your admin.py create one Admin using ChartReportAdmin
+		
 		from django.db.models import Sum, Avg, Count, Min, Max
 		from admin_report.mixins import ChartReportAdmin
 
