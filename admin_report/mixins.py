@@ -4,7 +4,7 @@ from django.contrib.admin.views.main import ChangeList
 from django.db.models.query import ValuesQuerySet
 from django.db.models import Sum, Avg, Count, Max, Min
 from django.contrib.admin.validation import ModelAdminValidator
-from django.http import HttpResponseRedirect
+from django.http import Http404, HttpResponseRedirect
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
 from daterange_filter.filter import DateRangeFilter
@@ -146,16 +146,16 @@ class ChangeListChartReport(ChangeList):
         else:
             self.query_to_normal_aggregate = qs
 
-        # print "#### query final ####"
-        # print qs.query
+        print "#### query final ####"
+        print qs.query
 
         return qs
 
     def get_results(self, request):
         super(self.__class__, self).get_results(request)
 
-        # print self.result_list[0].pedidoitem__valor_sem_desconto__avg
-        # print self.result_list[0].pedidoitem__valor_sem_desconto__max
+        # print self.result_list[0].pedidoitem__valor_unitario_sem_descontos__avg
+        # print self.result_list[0].pedidoitem__valor_unitario_sem_descontos__max
 
         # print "get_results"
         # print self.queryset.query
@@ -270,7 +270,7 @@ class AdminExceptionFieldsFilterMixin(admin.ModelAdmin):
         return ret
 
 
-class ReportAdmin(admin.ModelAdmin):
+class ChartReportAdmin(admin.ModelAdmin):
     # change_list_template = "admin/relatorios/change_list.html"
 
     report_annotates = ()
@@ -279,7 +279,7 @@ class ReportAdmin(admin.ModelAdmin):
     validator_class = ModelAdminValidator2
 
     # def __new__(cls, *args, **kwargs):
-        # return super(ReportAdmin, cls).__new__(cls, *args, **kwargs)
+        # return super(ChartReportAdmin, cls).__new__(cls, *args, **kwargs)
 
     class Media:
         css = {
@@ -326,9 +326,12 @@ class ReportAdmin(admin.ModelAdmin):
                     elif not copy_aggregate[2]:
                         copy_aggregate[2] = new_label
 
-                    column_display_list = aggregate[0]
-                    if column_display_list not in self.list_display:
-                        column_display_list = new_label
+                    if len(copy_aggregate) == 4:  # significa que foi especificado em qual coluna deve aparecer o valor agregado
+                        column_display_list = aggregate[3]
+                    else:
+                        column_display_list = aggregate[0]
+                        if column_display_list not in self.list_display:
+                            column_display_list = new_label
 
                     if column_display_list not in self.map_display_fields_and_aggregate:
                         self.map_display_fields_and_aggregate[column_display_list] = []
@@ -347,11 +350,11 @@ class ReportAdmin(admin.ModelAdmin):
         # print "########################## self.map_display_fields_and_aggregate #########################"
         # print self.map_display_fields_and_aggregate
 
-        # ReportAdmin.addMethod(function_builder("total_value__sum"))
+        # ChartReportAdmin.addMethod(function_builder("total_value__sum"))
 
         self.list_max_show_all = sys.maxsize
 
-        super(ReportAdmin, self).__init__(model, admin_site)
+        super(ChartReportAdmin, self).__init__(model, admin_site)
         self.list_display_links = (None, )
 
     # TODO: refazer esse metodo, nao esta legal
