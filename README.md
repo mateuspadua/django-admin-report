@@ -73,7 +73,7 @@ How use:
 				verbose_name, verbose_name_plural = u"Report Order Item", u"Report Order Items"
 				proxy = True 	
 
-3 Third: in your admin.py create one Admin using ChartReportAdmin
+3. Third: in your admin.py create one Admin using ChartReportAdmin
 		
 		from django.db.models import Sum, Avg, Count, Min, Max
 		from admin_report.mixins import ChartReportAdmin
