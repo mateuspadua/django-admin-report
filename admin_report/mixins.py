@@ -174,10 +174,10 @@ class ChangeListChartReport(ChangeList):
                         if isinstance(field, Model):
                             final_value = field.__class__.objects.get(id=value)
 
-                    if isinstance(final_value, float):
-                        final_value = formats.number_format(final_value, 2)
-                    else:
-                        final_value = formats.localize(final_value, use_l10n=True)
+                    # if isinstance(final_value, float):
+                    #     final_value = formats.number_format(final_value, 2)
+                    # else:
+                    #     final_value = formats.localize(final_value, use_l10n=True)
                     setattr(new_row, key, final_value)
                 new_result_list.append(new_row)
 
