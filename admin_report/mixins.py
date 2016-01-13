@@ -8,7 +8,7 @@ from django.http import Http404, HttpResponseRedirect
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
 from daterange_filter.filter import DateRangeFilter
-from django.db.models import Model
+from django.db.models import ForeignKey
 from django.db.models.constants import LOOKUP_SEP
 from django.db.models.sql.constants import QUERY_TERMS
 import copy
@@ -146,8 +146,8 @@ class ChangeListChartReport(ChangeList):
         else:
             self.query_to_normal_aggregate = qs
 
-        print "#### query final ####"
-        print qs.query
+        # print "#### query final ####"
+        # print qs.query
 
         return qs
 
@@ -161,29 +161,38 @@ class ChangeListChartReport(ChangeList):
         # print self.queryset.query
 
         if isinstance(self.result_list, ValuesQuerySet):
-            model_instance_base = self.model.objects.all()[:1]
-            # try:
-            model_instance_base = model_instance_base.get()
+            pk_name = self.model._meta.pk.name
+            try:
+                ids = [i[pk_name] for i in self.result_list]
+            except KeyError:
+                ids = []
+
+            result_list_in_model = self.model.objects.filter(pk__in=ids)
+            result_list_in_model_dict = {}
+            for item_model in result_list_in_model:
+                result_list_in_model_dict[getattr(item_model, pk_name)] = item_model
+
+            # print "result_list_in_model_dict ========="
+            # print result_list_in_model_dict
+
             new_result_list = []
             for row in self.result_list:
-                new_row = copy.deepcopy(model_instance_base)
-                for key, value in list(row.items()):
-                    final_value = value
-                    if hasattr(new_row, key):
-                        field = getattr(new_row, key)
-                        if isinstance(field, Model):
-                            final_value = field.__class__.objects.get(id=value)
+                if pk_name in row and result_list_in_model_dict:
+                    new_row = copy.deepcopy(result_list_in_model_dict[row[pk_name]])
+                else:
+                    new_row = self.model()
 
-                    # if isinstance(final_value, float):
-                    #     final_value = formats.number_format(final_value, 2)
-                    # else:
-                    #     final_value = formats.localize(final_value, use_l10n=True)
-                    setattr(new_row, key, final_value)
+                for key, value in list(row.items()):
+                    if hasattr(new_row, key):
+                        field_object, model, direct, m2m = self.model._meta.get_field_by_name(key)
+                        if (m2m or isinstance(field_object, ForeignKey)) is True:
+                            continue
+
+                    setattr(new_row, key, value)
+
                 new_result_list.append(new_row)
 
             self.result_list = new_result_list
-            # except self.model.DoesNotExist:
-            #     pass
 
         self.get_result_aggregate()
 
