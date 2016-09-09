@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
-from django.db.models.query import ValuesQuerySet
+# from django.db.models.query import ValuesQuerySet
 from django.db.models import Sum, Avg, Count, Max, Min
-from django.contrib.admin.validation import ModelAdminValidator
+# from django.contrib.admin.validation import ModelAdminValidator
 from django.http import Http404, HttpResponseRedirect
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
@@ -160,7 +160,7 @@ class ChangeListChartReport(ChangeList):
         # print "get_results"
         # print self.queryset.query
 
-        if isinstance(self.result_list, ValuesQuerySet):
+        if self.result_list and isinstance(self.result_list[0], dict):
             pk_name = self.model._meta.pk.name
             try:
                 ids = [i[pk_name] for i in self.result_list]
@@ -183,10 +183,11 @@ class ChangeListChartReport(ChangeList):
                     new_row = self.model()
 
                 for key, value in list(row.items()):
-                    if hasattr(new_row, key):
-                        field_object, model, direct, m2m = self.model._meta.get_field_by_name(key)
-                        if (m2m or isinstance(field_object, ForeignKey)) is True:
-                            continue
+                    # if hasattr(new_row, key):
+                    #     print self.model._meta.get_field(key)
+                    #     field_object, model, direct, m2m = self.model._meta.get_field_by_name(key)
+                    #     if (m2m or isinstance(field_object, ForeignKey)) is True:
+                    #         continue
 
                     setattr(new_row, key, value)
 
@@ -256,10 +257,10 @@ class ChangeListChartReport(ChangeList):
         self.result_aggregate = result_aggregate
 
 
-class ModelAdminValidator2(ModelAdminValidator):
-    def validate_list_display(self, cls, model):
-        # super(ModelAdminValidator2, self).validate_list_display(cls, model)
-        pass
+# class ModelAdminValidator2(ModelAdminValidator):
+#     def validate_list_display(self, cls, model):
+#         # super(ModelAdminValidator2, self).validate_list_display(cls, model)
+#         pass
 
 
 class AdminExceptionFieldsFilterMixin(admin.ModelAdmin):
@@ -285,7 +286,8 @@ class ChartReportAdmin(admin.ModelAdmin):
     report_annotates = ()
     report_aggregates = ()
     group_by = ()
-    validator_class = ModelAdminValidator2
+    list_display_links = None
+    # validator_class = ModelAdminValidator2
 
     # def __new__(cls, *args, **kwargs):
         # return super(ChartReportAdmin, cls).__new__(cls, *args, **kwargs)
@@ -364,7 +366,6 @@ class ChartReportAdmin(admin.ModelAdmin):
         self.list_max_show_all = sys.maxsize
 
         super(ChartReportAdmin, self).__init__(model, admin_site)
-        self.list_display_links = (None, )
 
     # TODO: refazer esse metodo, nao esta legal
     def add_view(self, request, form_url='', extra_context=None):
