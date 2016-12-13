@@ -268,16 +268,17 @@ class AdminExceptionFieldsFilterMixin(admin.ModelAdmin):
     exception_fields_filter = ()
 
     def lookup_allowed(self, lookup, value):
-        ret = super(AdminExceptionFieldsFilterMixin, self).lookup_allowed(lookup, value)
-        if not ret and self.exception_fields_filter:
-            parts = lookup.split(LOOKUP_SEP)
+        # ret = super(AdminExceptionFieldsFilterMixin, self).lookup_allowed(lookup, value)
+        # if not ret and self.exception_fields_filter:
+        #     parts = lookup.split(LOOKUP_SEP)
 
-            if len(parts) > 1 and parts[-1] in QUERY_TERMS:
-                parts.pop()
-                clean_lookup = LOOKUP_SEP.join(parts)
-                if clean_lookup in self.exception_fields_filter:
-                    return True
-        return ret
+        #     if len(parts) > 1 and parts[-1] in QUERY_TERMS:
+        #         parts.pop()
+        #         clean_lookup = LOOKUP_SEP.join(parts)
+        #         if clean_lookup in self.exception_fields_filter:
+        #             return True
+        # return ret
+        return True
 
 
 class ChartReportAdmin(admin.ModelAdmin):
