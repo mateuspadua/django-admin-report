@@ -136,6 +136,15 @@ class ChangeListChartReport(ChangeList):
 
             # Set ordering.
             ordering = self.get_ordering(request, qs)
+            if self.model_admin.group_by:
+                # muito esquisito isso, mas depois de muito estudo descobri que a ordem 'pk' ou '-pk'
+                # que é adicionado por padrão pela função acima 'get_ordering' atrapalha
+                # o GROUP_BY, como descrito um pouco no link abaixo
+                # https://docs.djangoproject.com/en/dev/topics/db/aggregation/#aggregation-ordering-interaction
+                if '-pk' in ordering:
+                    ordering.remove('-pk')
+                if 'pk' in ordering:
+                    ordering.remove('pk')
             qs = qs.order_by(*ordering)
 
             # Apply search results
