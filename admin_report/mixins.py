@@ -1,23 +1,18 @@
 # -*- coding: utf-8 -*-
-from django.contrib import admin
-from django.contrib.admin.views.main import ChangeList
-# from django.db.models.query import ValuesQuerySet
-from django.db.models import Sum, Avg, Count, Max, Min
-# from django.contrib.admin.validation import ModelAdminValidator
-from django.http import Http404, HttpResponseRedirect
-from django.contrib.admin.options import IncorrectLookupParameters
-from django.core.exceptions import SuspiciousOperation, ImproperlyConfigured
-from daterange_filter.filter import DateRangeFilter
-from django.db.models import ForeignKey
-from django.db.models.constants import LOOKUP_SEP
-from django.db.models.sql.constants import QUERY_TERMS
 import copy
 import types
-import uuid
 import sys
+# from django.contrib.admin.validation import ModelAdminValidator
+# from django.db.models import ForeignKey
+# from django.db.models.constants import LOOKUP_SEP
+# from django.db.models.sql.constants import QUERY_TERMS
+from django.contrib import admin
+from django.contrib.admin.views.main import ChangeList
+from django.db.models import Sum, Avg, Count, Max, Min, F
+from django.http import HttpResponseRedirect
 from django.utils import formats
 
-map_aggregates = ((Sum, "__sum"), (Count, "__count"), (Avg, "__avg"), (Max, "__max"), (Min, "__min"))
+map_aggregates = ((Sum, "__sum"), (Count, "__count"), (Avg, "__avg"), (Max, "__max"), (Min, "__min"), (F, "__expression"))
 
 
 def function_builder(name_function, attr, title_column):
@@ -35,94 +30,18 @@ class ChangeListChartReport(ChangeList):
 
     result_aggregate = []
 
+    # def get_ordering(self, request, queryset):
+    #     if self.model_admin.annotate_fields:
+    #         return []
+    #     else:
+    #         return super(ChangeListChartReport, self).get_ordering(request, queryset)
+
     def get_queryset(self, request):
 
-        # qs = super(self.__class__, self).get_queryset(request)
-        # First, we collect all the declared list filters.
-        (self.filter_specs, self.has_filters, remaining_lookup_params,
-            filters_use_distinct) = self.get_filters(request)
-
-        # Then, we let every list filter modify the queryset to its liking.
-
-        qs = self.root_queryset
-        # print "#### qs antes ####"
-        # print qs.query
-        all_query = {}
-        for filter_spec in self.filter_specs:
-            # print "---- filter_spec ----"
-            # print filter_spec.used_parameters
-            if filter_spec.used_parameters and filter_spec.used_parameters.values()[0]:
-                if isinstance(filter_spec, DateRangeFilter):
-                    if filter_spec.form.is_valid():
-                        # get no null params
-                        filter_params = dict(filter(lambda x: bool(x[1]),
-                                                    filter_spec.form.cleaned_data.items()))
-                        all_query.update(**filter_params)
-                else:
-                    all_query.update(filter_spec.used_parameters)
-
-            # comentando a versao do Django, pois da maneira abaixo ele intercala os join gerando joins extras, o que resulta em um resultado errado, nas agregaçoes SUM, COUNT, etc...
-            # new_qs = filter_spec.queryset(request, qs)
-            # if new_qs is not None:
-            #     qs = new_qs
-
-        # coloca o dicionário de uma vez só, assim dessa forma não há problema de criar joins "desnessárias" para filtros que apontam para as mesma tabelas estrangeiras
-        # como explicado logo acima
-        qs = qs.filter(**all_query)
-
-        # print "#### qs depois ####"
-        # print qs.query
-
-        try:
-            # Finally, we apply the remaining lookup parameters from the query
-            # string (i.e. those that haven't already been processed by the
-            # filters).
-            qs = qs.filter(**remaining_lookup_params)
-        except (SuspiciousOperation, ImproperlyConfigured):
-            # Allow certain types of errors to be re-raised as-is so that the
-            # caller can treat them in a special way.
-            raise
-        except Exception as e:
-            # Every other error is caught with a naked except, because we don't
-            # have any other way of validating lookup parameters. They might be
-            # invalid if the keyword arguments are incorrect, or if the values
-            # are not in the correct type, so we might get FieldError,
-            # ValueError, ValidationError, or ?.
-            raise IncorrectLookupParameters(e)
-
-        if not qs.query.select_related:
-            qs = self.apply_select_related(qs)
-
-        # Set ordering.
-        ordering = self.get_ordering(request, qs)
-        qs = qs.order_by(*ordering)
-
-        # Apply search results
-        qs, search_use_distinct = self.model_admin.get_search_results(
-            request, qs, self.query)
-
-        # Remove duplicates from results, if necessary
-        if filters_use_distinct | search_use_distinct:
-            qs = qs.distinct()
+        qs = super(ChangeListChartReport, self).get_queryset(request)
 
         if self.model_admin.annotate_fields:
             # qs = self.root_queryset
-
-            # all_used_parameters = {}
-            # qs = self.root_queryset
-            # (self.filter_specs, self.has_filters, remaining_lookup_params, filters_use_distinct) = self.get_filters(request)
-            # for filter_spec in self.filter_specs:
-            #     # props = ['choices', 'create', 'expected_parameters', 'field', 'field_path', 'has_output', 'lookup_kwarg', 'lookup_val', 'queryset', 'register', 'template', 'title', 'used_parameters']
-            #     # for p in props:
-            #     #    print "{0}: {1}".format(p, getattr(filter_spec, p))
-            #     # print "#####################################################"
-            #     new_qs = filter_spec.queryset(request, qs)
-            #     if new_qs is not None:
-            #         qs = new_qs
-            #     all_used_parameters.update(filter_spec.used_parameters)
-
-            # if all_used_parameters:
-            #     qs = qs.filter(**all_used_parameters)
 
             # estudar essa parte, esta estranho
             if self.model_admin.group_by:
@@ -132,7 +51,11 @@ class ChangeListChartReport(ChangeList):
             # representam um campo annotate, não se pode ter o annotate na query
             self.query_to_normal_aggregate = qs
 
-            qs = qs.annotate(*self.model_admin.annotate_fields_2, **self.model_admin.annotate_fields)
+            # print "self.model_admin.annotate_fields"
+            # print self.model_admin.annotate_fields
+
+            # qs = qs.annotate(*self.model_admin.annotate_fields_2, **self.model_admin.annotate_fields)
+            qs = qs.annotate(**self.model_admin.annotate_fields)
 
             # Set ordering.
             ordering = self.get_ordering(request, qs)
@@ -210,17 +133,24 @@ class ChangeListChartReport(ChangeList):
         # print self.list_display
 
         result_aggregate = []
+        result_aggregate_by_column = []
         result_aggregate_queryset = None
         result_aggregate_from_normal_queryset = {}
         result_aggregate_from_annotate_queryset = {}
         # from django.db import connection
-        # connection.queries = []
+        # from django.db import reset_queries
+        # reset_queries()
+
+        # print "===== self.model_admin.aggregate_fields_from_normal"
+        # print self.model_admin.aggregate_fields_from_normal
+
+        # print "===== aggregate_fields_from_annotate"
+        # print self.model_admin.aggregate_fields_from_annotate
+
         qs = self.queryset
         if self.model_admin.aggregate_fields_from_normal:
             # print "normal"
             result_aggregate_from_normal_queryset = self.query_to_normal_aggregate.aggregate(*self.model_admin.aggregate_fields_from_normal)
-            # print "########## result_aggregate_from_normal_queryset ##########"
-            # print result_aggregate_from_normal_queryset
 
         if self.model_admin.aggregate_fields_from_annotate:
             # print "annotate"
@@ -232,38 +162,53 @@ class ChangeListChartReport(ChangeList):
         # print qs.query
         # print connection.queries
 
+        # print result_aggregate_from_normal_queryset.query
         result_aggregate_queryset = dict(result_aggregate_from_normal_queryset, **result_aggregate_from_annotate_queryset)
 
-        # print result_aggregate_queryset
+        print result_aggregate_queryset
+
+        def get_result_aggregate(aggregate):
+            # clean_name_field = aggregate[0][:-len(aggregate[0][aggregate[0].rfind("__"):])]
+            pos_value_place_holder = aggregate[2].find("%value")
+
+            aggregate_string_replace = "{0} {1}"
+            if pos_value_place_holder != -1:
+                aggregate_string_replace = aggregate[2].replace("%value", "{1}")
+
+            if isinstance(result_aggregate_queryset[aggregate[0]], float):
+                label_foot = formats.number_format(result_aggregate_queryset[aggregate[0]], 2)
+            else:
+                label_foot = formats.localize(result_aggregate_queryset[aggregate[0]], use_l10n=True)
+
+            label_foot = aggregate_string_replace.format(aggregate[2], label_foot)
+            # result_aggregate_temp = label_foot
+            return label_foot
 
         if result_aggregate_queryset:
             for column in self.list_display:
-                result_aggregate_temp = None
-                if column in self.model_admin.map_display_fields_and_aggregate:
-                    for aggregate in self.model_admin.map_display_fields_and_aggregate[column]:
-                        # clean_name_field = aggregate[0][:-len(aggregate[0][aggregate[0].rfind("__"):])]
-                        pos_value_place_holder = aggregate[2].find("%value")
+                result_aggregate_temp = []
+                if column in self.model_admin.map_list_display_and_aggregate:
+                    # print "column: ", column
+                    for aggregate in self.model_admin.map_list_display_and_aggregate[column]:
+                        # print aggregate
+                        result_aggregate_temp.append(get_result_aggregate(aggregate))
 
-                        aggregate_string_replace = "<strong>{0}:</strong> {1}"
-                        if pos_value_place_holder != -1:
-                            aggregate_string_replace = aggregate[2].replace("%value", "{1}")
-
-                        if isinstance(result_aggregate_queryset[aggregate[0]], float):
-                            label_foot = formats.number_format(result_aggregate_queryset[aggregate[0]], 2)
-                        else:
-                            label_foot = formats.localize(result_aggregate_queryset[aggregate[0]], use_l10n=True)
-
-                        label_foot = aggregate_string_replace.format(aggregate[2], label_foot)
-                        result_aggregate_temp = "{0}<br>{1}".format(result_aggregate_temp, label_foot) if result_aggregate_temp else label_foot
-                    # print "@@@@@@@@@@@@@@@@@@@@@@@"
                 if result_aggregate_temp:
-                    result_aggregate.append(result_aggregate_temp)
+                    result_aggregate_by_column.append("<br>".join(result_aggregate_temp))
                 else:
-                    result_aggregate.append("")
+                    result_aggregate_by_column.append("")
+
+            for aggregate in self.model_admin.map_summary_aggregate:
+                result_aggregate.append(get_result_aggregate(aggregate))
 
         # print "################### result_aggregate #####################"
         # print result_aggregate
+
+        # print "################### result_aggregate_by_column #####################"
+        # print result_aggregate_by_column
+
         self.result_aggregate = result_aggregate
+        self.result_aggregate_by_column = result_aggregate_by_column
 
 
 # class ModelAdminValidator2(ModelAdminValidator):
@@ -311,33 +256,24 @@ class ChartReportAdmin(admin.ModelAdmin):
         # print "########################### report_annotates ###############################"
         # print self.report_annotates
         self.annotate_fields = {}
-        self.annotate_fields_2 = []
-        # self.aggregate_fields = []
         self.aggregate_fields_from_normal = []
         self.aggregate_fields_from_annotate = []
-        self.map_annotate_fields = {}
-        self.map_display_fields_and_aggregate = {}
+        self.map_list_display_and_aggregate = {}
+        self.map_summary_aggregate = []
 
         for annotate in self.report_annotates:
             for func, end_field_name in map_aggregates:
                 if func == annotate[1]:
-                    name_field_annotate = "{0}{1}".format(annotate[0], end_field_name)
-                    new_name_field_annotate = "{0}_{1}".format(annotate[0].replace("__", "_"), str(uuid.uuid4()).replace("-", "")[:10])
-                    self.map_annotate_fields.update({name_field_annotate: new_name_field_annotate})
-                    self.annotate_fields.update({new_name_field_annotate: annotate[1](annotate[0])})
-                    self.annotate_fields_2.append(annotate[1](annotate[0]))
-                    self.addMethod(function_builder(name_field_annotate, new_name_field_annotate, annotate[2] if len(annotate) == 3 else None))
+                    name_field_annotate = "{}{}".format(annotate[0], end_field_name)
+                    self.annotate_fields.update({name_field_annotate: annotate[1](annotate[0])})
+                    self.addMethod(function_builder(name_field_annotate, name_field_annotate, annotate[2] if len(annotate) == 3 else None))
                     break
 
         for aggregate in self.report_aggregates:
             for func, end_field_name in map_aggregates:
                 if func == aggregate[1]:
                     copy_aggregate = list(aggregate[:])
-                    if aggregate[0] in self.map_annotate_fields:
-                        new_name_field = self.map_annotate_fields[aggregate[0]]
-                    else:
-                        new_name_field = aggregate[0]
-                    name_field_aggregate = "{0}{1}".format(new_name_field, end_field_name)
+                    name_field_aggregate = "{0}{1}".format(aggregate[0], end_field_name)
 
                     copy_aggregate[0] = name_field_aggregate
 
@@ -354,24 +290,22 @@ class ChartReportAdmin(admin.ModelAdmin):
                         if column_display_list not in self.list_display:
                             column_display_list = new_label
 
-                    if column_display_list not in self.map_display_fields_and_aggregate:
-                        self.map_display_fields_and_aggregate[column_display_list] = []
+                    if column_display_list not in self.map_list_display_and_aggregate:
+                        self.map_list_display_and_aggregate[column_display_list] = []
 
-                    self.map_display_fields_and_aggregate[column_display_list].append(copy_aggregate)
+                    self.map_list_display_and_aggregate[column_display_list].append(copy_aggregate)
+                    self.map_summary_aggregate.append(copy_aggregate)
                     break
 
-            if aggregate[0] in self.map_annotate_fields:
-                new_name_field = self.map_annotate_fields[aggregate[0]]
-                self.aggregate_fields_from_annotate.append(aggregate[1](new_name_field))
+            if aggregate[0] in self.annotate_fields:
+                self.aggregate_fields_from_annotate.append(aggregate[1](aggregate[0]))
             else:
                 self.aggregate_fields_from_normal.append(aggregate[1](aggregate[0]))
 
         # print self.aggregate_fields_from_normal
         # print self.aggregate_fields_from_annotate
-        # print "########################## self.map_display_fields_and_aggregate #########################"
-        # print self.map_display_fields_and_aggregate
-
-        # ChartReportAdmin.addMethod(function_builder("total_value__sum"))
+        # print "########################## self.map_list_display_and_aggregate #########################"
+        # print self.map_list_display_and_aggregate
 
         self.list_max_show_all = sys.maxsize
 
