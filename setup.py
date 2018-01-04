@@ -14,9 +14,7 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
 ]
 
-install_requires = [
-    'django-daterange-filter',
-]
+install_requires = []
 
 setup(
     name="django-admin-report",
