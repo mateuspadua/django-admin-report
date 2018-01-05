@@ -57,6 +57,26 @@
     </div>
 {% endif %}
 {% if results %}
+    {% if cl.result_aggregate %}
+        <div style="border: 1px solid #d0d0d0;
+                    padding: 23px 10px 10px 15px;
+                    border-radius: 3px;
+                    margin-bottom: 10px;
+                    position: relative;
+                    margin-top: 5px;">
+          <span style="font-size: 25px;
+                       position: absolute;
+                       top: -16px;
+                       left: 19px;
+                       background-color: white;
+                       padding: 5px;">Resumo relatório</span>
+          {% for item in cl.result_aggregate %}
+            {% if item %}
+              {{ item|safe }}<br>
+            {% endif %}
+          {% endfor %}
+        </div>
+    {% endif %}
     <div class="results">
         <table id="result_list" class="table table-striped table-bordered table-hover table-condensed">
             <thead>
@@ -82,13 +102,14 @@
                     </th>{% endfor %}
             </tr>
             </thead>
-            {% if cl.result_aggregate %}
+
+            {% if cl.result_aggregate_by_column %}
               {% if cl.paginator.num_pages == cl.page_num|add:"1" or cl.show_all %}
               <tfoot>
                 <tr>
-                  {% for item in cl.result_aggregate %}
+                  {% for item in cl.result_aggregate_by_column %}
                     <td>{{ item|safe }}</td>
-                    {% endfor %}
+                  {% endfor %}
                 </tr>
               </tfoot>
               {% endif %}
